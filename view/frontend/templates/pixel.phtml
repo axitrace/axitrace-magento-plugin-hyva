@@ -1,0 +1,81 @@
+<?php
+/**
+ * AxiTrace storefront pixel — Hyva theme.
+ *
+ * CSP-strict. Every inline <script> is followed by $hyvaCsp->registerInlineScript()
+ * with the correct path so Hyva's nonce/hash registry accepts it.
+ *
+ * Alpine usage follows Hyva CSP-build conventions:
+ *   - x-data="axitracePixel"   (NO parens — CSP build forbids expression eval)
+ *   - Alpine.data('axitracePixel', () => ({ init() { ... } })) registered via alpine:init.
+ *
+ * @var Magento\Framework\View\Element\Template $block
+ * @var Hyva\Theme\Model\ViewModelRegistry $viewModels
+ * @var Magento\Framework\Escaper $escaper
+ * @var Hyva\Theme\Service\CurrentTheme $currentTheme
+ *
+ * Note: $hyvaCsp is provided by Hyva_Theme on every storefront template.
+ */
+
+use AxiTrace\Tracking\ViewModel\CategoryContext;
+use AxiTrace\Tracking\ViewModel\ProductContext;
+use AxiTrace\Tracking\ViewModel\StorefrontConfig;
+
+/** @var StorefrontConfig|null $viewModel */
+$viewModel = $block->getData('view_model');
+if (!$viewModel || !$viewModel->isEnabled()) {
+    return;
+}
+
+$config = $viewModel->getInlineConfig();
+$configJson = (string) json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+
+$productPayload = null;
+$productVm = $block->getData('product_view_model');
+if ($productVm instanceof ProductContext) {
+    $productPayload = $productVm->getProductPayload();
+}
+
+$categoryPayload = null;
+$categoryVm = $block->getData('category_view_model');
+if ($categoryVm instanceof CategoryContext) {
+    $categoryPayload = $categoryVm->getCategoryPayload();
+}
+
+$extraJson = (string) json_encode(
+    array_filter([
+        'product'  => $productPayload ?: null,
+        'category' => $categoryPayload ?: null,
+    ]),
+    JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
+);
+
+$trackingDomain = (string) $config['trackingDomain'];
+$sdkUrl = 'https://' . htmlspecialchars($trackingDomain, ENT_QUOTES, 'UTF-8') . '/axitrack.js';
+?>
+<div x-data="axitracePixel" data-axi-config='<?= /* @noEscape */ $configJson ?>' data-axi-context='<?= /* @noEscape */ $extraJson ?>'></div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('axitracePixel', () => ({
+            init() {
+                let cfg = {};
+                let ctx = {};
+                try {
+                    cfg = JSON.parse(this.$el.dataset.axiConfig || '{}');
+                    ctx = JSON.parse(this.$el.dataset.axiContext || '{}');
+                } catch (e) {
+                    return;
+                }
+                window.axitraceConfig = cfg;
+                window.axitracePageContext = ctx;
+
+                const script = document.createElement('script');
+                script.defer = true;
+                script.src = <?= /* @noEscape */ json_encode($sdkUrl, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) ?>;
+                document.body.appendChild(script);
+            }
+        }));
+    });
+</script>
+<?= /* @noEscape */ $hyvaCsp->registerInlineScript() ?>

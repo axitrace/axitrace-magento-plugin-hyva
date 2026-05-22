@@ -1,0 +1,72 @@
+<?php
+/**
+ * Order confirmation purchase-event push — Hyva theme.
+ *
+ * Uses an Alpine component (CSP-compatible) and pairs every <script> tag with
+ * $hyvaCsp->registerInlineScript() so the inline code is whitelisted in Hyva's
+ * strict CSP environment.
+ *
+ * @var \Magento\Framework\View\Element\Template $block
+ * @var \AxiTrace\Tracking\ViewModel\OrderConfirmationContext|null $viewModel
+ * Note: $hyvaCsp is provided by Hyva_Theme on every storefront template.
+ */
+
+use AxiTrace\Tracking\ViewModel\OrderConfirmationContext;
+
+/** @var OrderConfirmationContext|null $viewModel */
+$viewModel = $block->getData('view_model');
+if (!$viewModel || !$viewModel->hasOrder()) {
+    return;
+}
+
+$payload = $viewModel->getOrderPayload();
+$payloadJson = (string) json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+?>
+<div x-data="axitracePurchase" data-axi-payload='<?= /* @noEscape */ $payloadJson ?>'></div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('axitracePurchase', () => ({
+            init() {
+                let payload = {};
+                try {
+                    payload = JSON.parse(this.$el.dataset.axiPayload || '{}');
+                } catch (e) {
+                    return;
+                }
+                const key = 'axi:purchase:' + payload.event_id;
+                try {
+                    if (sessionStorage && sessionStorage.getItem(key)) {
+                        return;
+                    }
+                    if (sessionStorage) {
+                        sessionStorage.setItem(key, '1');
+                    }
+                } catch (e) {
+                    // ignore
+                }
+
+                const push = () => {
+                    if (!window.axitrace || typeof window.axitrace.track !== 'function') {
+                        return;
+                    }
+                    window.axitrace.track('transaction.charge', {
+                        event_id:   payload.event_id,
+                        orderId:    payload.orderId,
+                        value:      payload.value,
+                        currency:   payload.currency,
+                        items:      payload.items,
+                        email:      payload.email
+                    });
+                };
+
+                if (window.axitrace) {
+                    push();
+                } else {
+                    window.addEventListener('axitrace:ready', push, { once: true });
+                }
+            }
+        }));
+    });
+</script>
+<?= /* @noEscape */ $hyvaCsp->registerInlineScript() ?>

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!--
+    Registers this compat module with Hyva's CompatModuleRegistry so its
+    view/frontend/templates override AxiTrace_Tracking templates when Hyva
+    is the active theme.
+
+    See https://docs.hyva.io/hyva-themes/compatibility-modules/ for the full
+    pattern; the array-of-maps structure is required (not a flat map), per
+    Hyva\CompatModuleFallback\Model\CompatModuleRegistry::__construct().
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <type name="Hyva\CompatModuleFallback\Model\CompatModuleRegistry">
+        <arguments>
+            <argument name="compatModules" xsi:type="array">
+                <item name="hyva_axitrace_tracking_map" xsi:type="array">
+                    <item name="original_module" xsi:type="string">AxiTrace_Tracking</item>
+                    <item name="compat_module" xsi:type="string">Hyva_AxiTraceTracking</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+
+</config>

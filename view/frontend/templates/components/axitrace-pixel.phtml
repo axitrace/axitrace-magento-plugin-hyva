@@ -1,0 +1,17 @@
+<?php
+/**
+ * Reusable Alpine.data component partial. Currently a passthrough — the main
+ * pixel.phtml inlines the component registration so there's only one network
+ * round-trip on first render. Kept here as a discoverable extension point
+ * for sites that want to call the same pixel from custom Hyva pages.
+ *
+ * @var \Magento\Framework\View\Element\Template $block
+ * Note: $hyvaCsp is provided by Hyva_Theme.
+ */
+?>
+<script>
+    /* AxiTrace Hyva pixel component — defined in pixel.phtml. This file
+       is intentionally minimal; merchants overriding Hyva templates can
+       include it as a marker to confirm the compat module is active. */
+</script>
+<?= /* @noEscape */ $hyvaCsp->registerInlineScript() ?>
