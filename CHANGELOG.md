@@ -2,6 +2,15 @@
 
 All notable changes to `axitrace/module-tracking-hyva` are documented here.
 
+## [0.1.2] - 2026-08-13
+
+### Added
+- Alpine pixel component now fires `begin_checkout` on the checkout page with cart value, currency, and item count, and `add_payment_info` once the customer reaches the payment step. Both read the same server-authoritative cart context as the Luma theme, via `AxiTrace\Tracking\ViewModel\CheckoutContext` (shipped in `axitrace/module-tracking` ^0.1.4).
+- `add_payment_info` primary trigger: the checkout SPA's URL hash reaching `#payment` (works with core Magento checkout's `step-navigator` and, best-effort, with Hyva Checkout's own step router when installed — see README caveat). Fallback trigger: a delegated `change` listener on `payment[method]` radio inputs, for checkouts that don't sync the active step to the URL hash.
+
+### Fixed
+- The `checkout_index_index.xml` layout registration referenced in the 0.1.0 changelog ("Separate Hyva Checkout context registration") was never actually shipped in this module. It turned out to be unnecessary: `AxiTrace_Tracking`'s own `view/frontend/layout/checkout_index_index.xml` (added in 0.1.4) already wires the `checkout_view_model` block argument for every active theme, because Magento merges layout XML from all enabled modules regardless of which theme is active — only template *file* resolution (`.phtml` path) is theme-specific, which `Hyva_CompatModuleFallback` already handles. No layout file was added here; the changelog claim above is now retracted.
+
 ## [0.1.1] - 2026-05-24
 
 ### Fixed

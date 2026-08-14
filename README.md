@@ -31,16 +31,42 @@ behaviour. This package only swaps templates.
    `x-data="axitracePixel"` (no parens), no inline expression evaluation.
 3. **Pairs every inline `<script>` with `$hyvaCsp->registerInlineScript()`** so
    strict CSP environments allow the SDK to load.
-4. **Registers a separate block for Hyva Checkout** (`checkout_index_index.xml`)
-   because Hyva Checkout has its own CSP pipeline distinct from regular
-   storefront pages.
+## Checkout events (`begin_checkout` / `add_payment_info`)
+
+No separate layout registration is needed in this package: the parent
+module's `view/frontend/layout/checkout_index_index.xml` already injects the
+cart-value/currency/item-count context into the shared `axitrace.pixel`
+block, and Magento merges layout XML from every active module regardless of
+theme — only `.phtml` file resolution is theme-specific, which the compat
+module fallback above already handles. (An earlier changelog entry claimed a
+dedicated Hyva `checkout_index_index.xml` shipped for this; it never did, and
+turned out not to be necessary — see the parent module's CHANGELOG.)
+
+`begin_checkout` fires once when the Alpine pixel component initializes on
+the checkout page. `add_payment_info` fires primarily on the checkout SPA's
+URL hash reaching `#payment`, with a payment-method-radio `change` listener
+as a fallback — see `view/frontend/templates/pixel.phtml` for the exact
+trigger logic and reasoning.
 
 ## Hyva Checkout
 
-If you use [Hyva Checkout](https://hyva.io/hyva-checkout/), the purchase event
-still fires on the standard Magento success page (`/checkout/onepage/success`)
-because Hyva Checkout returns the merchant to that route after order placement.
-You do not need to install any additional packages.
+If you use [Hyva Checkout](https://hyva.io/hyva-checkout/) (the paid,
+independently-rendered checkout product — distinct from simply running the
+free Hyva theme), the purchase event still fires on the standard Magento
+success page (`/checkout/onepage/success`) because Hyva Checkout returns the
+merchant to that route after order placement. You do not need to install any
+additional packages for that.
+
+`begin_checkout` / `add_payment_info`, however, are **not verified against a
+live Hyva Checkout install**: Hyva Checkout may render its own step router
+without syncing `window.location.hash`, and — more importantly — if it
+serves checkout from a page shell that does not include Magento's standard
+`before.body.end` container, the `axitrace.pixel` block (and therefore every
+mid-funnel event) may not render there at all. Test against a real Hyva
+Checkout store before relying on these two events for that flow; the
+hash-based trigger degrades gracefully to no-op rather than throwing, so a
+mismatch here cannot break checkout — it can only mean the event doesn't
+fire.
 
 ## CI: CSP audit
 
