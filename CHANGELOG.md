@@ -2,6 +2,12 @@
 
 All notable changes to `axitrace/module-tracking-hyva` are documented here.
 
+## [0.1.3] - 2026-11-10
+
+### Fixed
+- **A product, category or SKU name with an apostrophe no longer stops the storefront pixel.** The pixel and order-confirmation templates printed their JSON into single-quoted `data-axi-*` attributes, so a name such as `Men's shirt` ended the attribute early: `JSON.parse` failed and no event was sent from that page. A name carrying markup could also inject HTML into the page. The JSON is now encoded with `JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP` and printed into double-quoted attributes through `$escaper->escapeHtmlAttr()`.
+- **Installs next to the current core module.** The package required `axitrace/module-tracking` `^0.1.4 || ^1.0`, which Composer reads as below 0.2.0, so it could not be installed together with the 0.4.x core module. It now requires `^0.4.2 || ^1.0`.
+
 ## [0.1.2] - 2026-08-13
 
 ### Added

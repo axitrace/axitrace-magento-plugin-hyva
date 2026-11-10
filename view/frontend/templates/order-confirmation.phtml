@@ -8,6 +8,7 @@
  *
  * @var \Magento\Framework\View\Element\Template $block
  * @var \AxiTrace\Tracking\ViewModel\OrderConfirmationContext|null $viewModel
+ * @var \Magento\Framework\Escaper $escaper
  * Note: $hyvaCsp is provided by Hyva_Theme on every storefront template.
  */
 
@@ -20,9 +21,14 @@ if (!$viewModel || !$viewModel->hasOrder()) {
 }
 
 $payload = $viewModel->getOrderPayload();
-$payloadJson = (string) json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+// Product names may hold quotes, apostrophes or markup: the JSON is hex-escaped and printed
+// into a double-quoted attribute through escapeHtmlAttr().
+$payloadJson = (string) json_encode(
+    $payload,
+    JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+);
 ?>
-<div x-data="axitracePurchase" data-axi-payload='<?= /* @noEscape */ $payloadJson ?>'></div>
+<div x-data="axitracePurchase" data-axi-payload="<?= $escaper->escapeHtmlAttr($payloadJson) ?>"></div>
 
 <script>
     document.addEventListener('alpine:init', () => {

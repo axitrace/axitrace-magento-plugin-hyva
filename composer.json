@@ -11,7 +11,7 @@
     },
     "require": {
         "php": "^8.1 || ^8.2 || ^8.3 || ^8.4",
-        "axitrace/module-tracking": "^0.1.4 || ^1.0",
+        "axitrace/module-tracking": "^0.4.2 || ^1.0",
         "hyva-themes/magento2-compat-module-fallback": "^1.0",
         "magento/framework": "^103.0"
     },
